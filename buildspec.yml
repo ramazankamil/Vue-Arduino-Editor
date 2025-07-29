@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - npm i -g yarn
+      - yarn
+    runtime-versions:
+      nodejs: 12
+  build:
+    commands:
+      - yarn build
+      - cp dist/servers-beta.json dist/servers.json
+artifacts:
+  files:
+    - '**/*'
+  base-directory: dist
