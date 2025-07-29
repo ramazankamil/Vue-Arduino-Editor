@@ -10,7 +10,7 @@
         />
       </v-col>
       <v-col md="8" lg="6" class="text-center">
-        <h1 class="text-h1">Welcome to Duino App</h1>
+        <h1 class="text-h1">Welcome to Et-Edu Arduino Editor</h1>
       </v-col>
       <v-col cols="12">&nbsp;</v-col>
       <v-col cols="auto" class="text-center">
