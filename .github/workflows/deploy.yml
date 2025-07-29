@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '12.x'
- 
+
       - name: Install Packages and Build Application
         run: |
           npm install -g @vue/cli yarn
