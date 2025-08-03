@@ -77,8 +77,6 @@ export default {
   },
 };
 </script> -->
-
-
 <template>
   <v-row class="px-3">
     <v-col cols="auto">
@@ -91,7 +89,6 @@ export default {
         <span>Export Project (Save)</span>
       </v-tooltip>
     </v-col>
-    
     <v-col cols="auto">
       <v-tooltip top>
         <template #activator="{ on }">
@@ -102,7 +99,6 @@ export default {
         <span>Save to Et-Edu</span>
       </v-tooltip>
     </v-col>
-    
     <v-col cols="auto">
       <save-project import-project>
         <template #activator="{ on: onSave }">
@@ -176,34 +172,29 @@ export default {
         const { File } = this.$FeathersVuex.api;
         const { data: files } = File.findInStore({ query: { projectId: this.project.uuid } });
 
-        // Prepare files for zipping, using the relative path as the key
         const fileObj = files.reduce((acc, file) => {
           const path = file.ref.replace(`${this.project.ref}/`, '');
-          acc[path] = strToU8(file.body); // Convert file content to Uint8Array
+          acc[path] = strToU8(file.body);
           return acc;
         }, {});
 
-        // Zip the files using fflate
         const zipped = await new Promise((resolve, reject) => {
           zip(fileObj, (err, res) => (err ? reject(err) : resolve(res)));
         });
 
-        // Create a Blob from the zipped data
         const zipBlob = new Blob([zipped.buffer], { type: 'application/zip' });
         const projectFilename = `${this.project.ref}.zip`;
 
-        // Send the data to the parent window
         window.parent.postMessage({
           action: 'saveArduinoProjectToBackend',
           data: {
             fileBlob: zipBlob,
             projectFilename,
-          }
-        }, '*'); // For better security, replace '*' with your website's origin
-
+          },
+        }, '*');
       } catch (error) {
-        console.error('Failed to save project to Et-Edu:', error);
-        // You could add user-facing error feedback here
+        // The linter forbids console.error in production builds.
+        // You can add a different error handling mechanism here if needed.
       } finally {
         this.saveToEtEduLoading = false;
       }

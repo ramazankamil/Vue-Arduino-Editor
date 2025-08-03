@@ -219,8 +219,6 @@ export default {
   top: 4px;
 }
 </style> -->
-
-
 <template>
   <v-app>
     <div>
@@ -419,26 +417,12 @@ export default {
       if (this.$serial) this.serialReady = true;
       else setTimeout(() => this.checkSerialReady(), 100);
     },
-    /**
-     * Handles messages sent from the parent window (your Et-Edu website).
-     */
     async handleParentMessage(event) {
-      // For security, you should ideally check the origin of the message
-      // if (event.origin !== 'https://your-et-edu-website.com') {
-      //   console.warn('Message from untrusted origin ignored:', event.origin);
-      //   return;
-      // }
-
       const { action, remoteFileUrl, projectTitle } = event.data;
-
       if (action === 'loadArduinoProject' && remoteFileUrl && projectTitle) {
         await this.loadProjectFromUrl(remoteFileUrl, projectTitle);
       }
     },
-
-    /**
-     * Fetches code from a URL, creates a new project and file, and opens it.
-     */
     async loadProjectFromUrl(url, name) {
       try {
         const response = await fetch(url);
@@ -447,20 +431,14 @@ export default {
         }
         const fileContent = await response.text();
         const { Project, File } = this.$FeathersVuex.api;
-        
-        // Logic to create a unique project reference (folder name)
         let ref = snakeCase(name);
         let count = 1;
         while (this.$store.getters['projects/find']({ query: { ref } }).total) {
           count += 1;
           ref = `${snakeCase(name)}_${count}`;
         }
-
-        // Create and save the new project
         let project = new Project({ name, ref });
         project = await project.save();
-
-        // Create and save the main .ino file
         const file = new File({
           name: `${project.ref}.ino`,
           ref: `${project.ref}/${project.ref}.ino`,
@@ -470,22 +448,15 @@ export default {
           projectId: project.uuid,
         });
         await file.save();
-
-        // Set the new project and file as active in the editor
         this.$store.commit('setCurrentProject', project.uuid);
         this.$store.commit('setCurrentFile', file.uuid);
-        
-        // Automatically switch to the code view
         if (this.$router.currentRoute.path !== '/code') {
           this.$router.push('/code');
         }
-
       } catch (error) {
-        console.error('Error loading project from URL:', error);
-        // Optionally, notify the parent window of the error
         window.parent.postMessage({ action: 'loadProjectError', error: error.message }, '*');
       }
-    }
+    },
   },
   async mounted() {
     this.checkSerialReady();
@@ -495,12 +466,9 @@ export default {
     const { Setting } = this.$FeathersVuex.api;
     const { data } = Setting.findInStore({ query: { key: 'editor' } });
     this.$vuetify.theme.dark = /(dark)|(black)/.test(data[0]?.value?.theme ?? '');
-    
-    // Add the event listener for parent window messages
     window.addEventListener('message', this.handleParentMessage);
   },
   beforeDestroy() {
-    // Clean up the event listener when the component is destroyed
     window.removeEventListener('message', this.handleParentMessage);
   },
 };
@@ -508,11 +476,9 @@ export default {
 
 <style lang="scss">
 @import '../node_modules/xterm/css/xterm.css';
-
 .shelf-tabs > .v-tabs-bar {
   background-color: transparent !important;
 }
-
 .right-actions {
   position: absolute;
   right: 24px;
