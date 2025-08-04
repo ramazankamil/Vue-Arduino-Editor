@@ -166,7 +166,7 @@
 <script>
 import { mapMutations } from 'vuex';
 import snakeCase from 'lodash/snakeCase';
-import { zip, strToU8 } from 'fflate'; // 🚀 IMPORT ZIP LOGIC
+import { zip, strToU8 } from 'fflate';
 import BoardFooter from './components/boards/footer-btn.vue';
 import ServerFooter from './components/servers/footer-btn.vue';
 import SerialFooter from './components/serial/footer-btn.vue';
@@ -198,10 +198,9 @@ export default {
       serialReady: false,
       tab: 'program',
       version,
-      saveToEtEduLoading: false, // 🚀 ADD LOADING STATE FOR NEW BUTTON
+      saveToEtEduLoading: false,
     };
   },
-  // 🚀 ADD COMPUTED PROPERTY TO GET THE CURRENT PROJECT
   computed: {
     currentProject() {
       return this.$store.getters['projects/find']({ query: { uuid: this.$store.getters.currentProject } }).data[0];
@@ -213,7 +212,6 @@ export default {
       if (this.$serial) this.serialReady = true;
       else setTimeout(() => this.checkSerialReady(), 100);
     },
-    // 🚀 ADD SAVE TO ET-EDU METHOD
     async saveToEtEdu() {
       if (!this.currentProject) return;
       this.saveToEtEduLoading = true;
@@ -252,7 +250,21 @@ export default {
       if (action === 'loadArduinoProject' && remoteFileUrl && projectTitle) {
         await this.loadProjectFromUrl(remoteFileUrl, projectTitle);
       }
+
+      // 🚀 START CHANGE: Handle the new reset command
+      if (action === 'resetEditor') {
+        this.resetEditorState();
+      }
+      // 🚀 END CHANGE
     },
+    // 🚀 START CHANGE: Add the new reset method
+    resetEditorState() {
+      // Clear all data (projects, files, settings) stored in this editor's localStorage
+      localStorage.clear();
+      // Reload the page to ensure a completely fresh start
+      window.location.reload();
+    },
+    // 🚀 END CHANGE
     async loadProjectFromUrl(url, name) {
       try {
         const response = await fetch(url);
