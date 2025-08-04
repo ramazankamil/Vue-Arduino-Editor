@@ -27,7 +27,6 @@
           <v-icon left>mdi-information</v-icon>
           About
         </v-btn>
-
         <v-btn
           text
           dense
