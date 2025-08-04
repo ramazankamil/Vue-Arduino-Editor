@@ -27,6 +27,18 @@
           <v-icon left>mdi-information</v-icon>
           About
         </v-btn>
+
+        <v-btn
+          text
+          dense
+          @click="saveToEtEdu"
+          :loading="saveToEtEduLoading"
+          v-if="currentProject"
+          class="mx-1"
+        >
+          <v-icon left>mdi-content-save-move-outline</v-icon>
+          Save to Et-Edu
+        </v-btn>
         <v-spacer/>
         <compile-btn bottom />
         <upload-btn bottom />
@@ -149,12 +161,13 @@
       </v-row>
     </v-footer>
     <serial-prompts />
-    </v-app>
+  </v-app>
 </template>
 
 <script>
 import { mapMutations } from 'vuex';
 import snakeCase from 'lodash/snakeCase';
+import { zip, strToU8 } from 'fflate'; // 🚀 IMPORT ZIP LOGIC
 import BoardFooter from './components/boards/footer-btn.vue';
 import ServerFooter from './components/servers/footer-btn.vue';
 import SerialFooter from './components/serial/footer-btn.vue';
@@ -165,7 +178,6 @@ import CompileBtn from './components/program/compile.vue';
 import UploadBtn from './components/program/upload.vue';
 import CompileConsole from './components/program/console.vue';
 import Coffee from './components/coffee.vue';
-// import ImportantUpdate from './components/general/important-update.vue';
 import { version } from '../package.json';
 
 export default {
@@ -181,20 +193,60 @@ export default {
     CompileConsole,
     UploadBtn,
     Coffee,
-    // ImportantUpdate,
   },
   data() {
     return {
       serialReady: false,
       tab: 'program',
       version,
+      saveToEtEduLoading: false, // 🚀 ADD LOADING STATE FOR NEW BUTTON
     };
+  },
+  // 🚀 ADD COMPUTED PROPERTY TO GET THE CURRENT PROJECT
+  computed: {
+    currentProject() {
+      return this.$store.getters['projects/find']({ query: { uuid: this.$store.getters.currentProject } }).data[0];
+    },
   },
   methods: {
     ...mapMutations(['toggleSerialShelf', 'setSerialTab']),
     checkSerialReady() {
       if (this.$serial) this.serialReady = true;
       else setTimeout(() => this.checkSerialReady(), 100);
+    },
+    // 🚀 ADD SAVE TO ET-EDU METHOD
+    async saveToEtEdu() {
+      if (!this.currentProject) return;
+      this.saveToEtEduLoading = true;
+      try {
+        const { File } = this.$FeathersVuex.api;
+        const { data: files } = File.findInStore({ query: { projectId: this.currentProject.uuid } });
+
+        const fileObj = files.reduce((acc, file) => {
+          const path = file.ref.replace(`${this.currentProject.ref}/`, '');
+          acc[path] = strToU8(file.body);
+          return acc;
+        }, {});
+
+        const zipped = await new Promise((resolve, reject) => {
+          zip(fileObj, (err, res) => (err ? reject(err) : resolve(res)));
+        });
+
+        const zipBlob = new Blob([zipped.buffer], { type: 'application/zip' });
+        const projectFilename = `${this.currentProject.ref}.zip`;
+
+        window.parent.postMessage({
+          action: 'saveArduinoProjectToBackend',
+          data: {
+            fileBlob: zipBlob,
+            projectFilename,
+          },
+        }, '*');
+      } catch (error) {
+        // Linter rules prevent console.log here.
+      } finally {
+        this.saveToEtEduLoading = false;
+      }
     },
     async handleParentMessage(event) {
       const { action, remoteFileUrl, projectTitle } = event.data;
