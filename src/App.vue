@@ -251,20 +251,26 @@ export default {
         await this.loadProjectFromUrl(remoteFileUrl, projectTitle);
       }
 
-      // 🚀 START CHANGE: Handle the new reset command
       if (action === 'resetEditor') {
         this.resetEditorState();
       }
-      // 🚀 END CHANGE
     },
-    // 🚀 START CHANGE: Add the new reset method
+    // 🚀 START: CORRECTED RESET METHOD
     resetEditorState() {
-      // Clear all data (projects, files, settings) stored in this editor's localStorage
+      // Clear all data (projects, files, settings) stored in this editor's localStorage.
       localStorage.clear();
-      // Reload the page to ensure a completely fresh start
-      window.location.reload();
+
+      // Reset the current state in the application without reloading.
+      this.$store.commit('setCurrentProject', null);
+      this.$store.commit('setCurrentFile', null);
+
+      // If not already on the code page, navigate there.
+      // It will now show the "Select a Project" screen.
+      if (this.$router.currentRoute.path !== '/code') {
+        this.$router.push('/code');
+      }
     },
-    // 🚀 END CHANGE
+    // 🚀 END: CORRECTED RESET METHOD
     async loadProjectFromUrl(url, name) {
       try {
         const response = await fetch(url);
