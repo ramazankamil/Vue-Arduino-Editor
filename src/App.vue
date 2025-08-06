@@ -450,15 +450,16 @@ export default {
       try {
         const { Project, File } = this.$FeathersVuex.api;
 
-        // 🚀 START: ADDED CLEANUP LOGIC TO FIX RENAMING BUG
-        // Before loading a new project, delete all existing projects and files
-        // from the editor's local storage. This prevents name collisions.
+        // 🚀 START CHANGE #1: Refactor the loop to satisfy the linter rules
         const { data: existingProjects } = await Project.find({ query: { $limit: 9999 } });
-        for (const proj of existingProjects) {
-          await File.remove(null, { query: { projectId: proj.uuid } }); // Remove all files for this project
-          await proj.remove(); // Remove the project itself
-        }
-        // 🚀 END: ADDED CLEANUP LOGIC
+        // Create an array of promises for all deletion tasks
+        const deletionPromises = existingProjects.map(async (proj) => {
+          await File.remove(null, { query: { projectId: proj.uuid } });
+          await proj.remove();
+        });
+        // Wait for all deletions to complete
+        await Promise.all(deletionPromises);
+        // 🚀 END CHANGE #1
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -471,8 +472,9 @@ export default {
           unzip(zipData, (err, res) => (err ? reject(err) : resolve(res)));
         });
 
-        // Now that storage is clean, this will create the correct 'ref' without adding "_2"
-        let ref = snakeCase(name);
+        // 🚀 START CHANGE #2: Changed 'let' to 'const' to satisfy the linter
+        const ref = snakeCase(name);
+        // 🚀 END CHANGE #2
         let project = new Project({ name, ref });
         project = await project.save();
 
